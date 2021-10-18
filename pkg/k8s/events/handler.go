@@ -50,9 +50,6 @@ func (e *ElEvent) Handle(res chan interface{}) {
 	e.log()
 	e.insertAlerts()
 
-	if e.SlsSink != nil {
-		e.ExportSls()
-	}
 	e.insertMysql()
 	res <- &EventResult{
 		err: nil,
@@ -69,12 +66,6 @@ func (e *ElEvent) Handle2() {
 	go e.insertAlerts()
 }
 
-func (e *ElEvent) ExportSls() {
-	e.SlsSink.ExportEvents(&sls.EventBatch{
-		Timestamp: e.T,
-		Events:    []*v1.Event{e.Event},
-	})
-}
 
 func (e *ElEvent) log() {
 	event := e.Event
