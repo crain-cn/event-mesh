@@ -1,0 +1,98 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.4.1
+  creationTimestamp: null
+  name: eventroutes.eventmesh.eventmesh.com
+spec:
+  group: eventmesh.eventmesh.com
+  names:
+    kind: EventRoute
+    listKind: EventRouteList
+    plural: eventroutes
+    singular: eventroute
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: eventRoute defines  to be aggregated multiple cluster event sink route.
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: AlertmanagerConfigSpec is a specification of the desired behavior of the Alertmanager configuration. By definition, the Alertmanager configuration only applies to alerts for which the `namespace` label is equal to the namespace of the AlertmanagerConfig resource.
+            properties:
+              receivers:
+                description: List of labels to receiver by.
+                items:
+                  type: object
+                type: array
+              route:
+                description: The Alertmanager route definition for alerts matching the resource’s namespace. If present, it will be added to the generated Alertmanager configuration as a first-level route.
+                properties:
+                  continue:
+                    description: Boolean indicating whether an alert should continue matching subsequent sibling nodes. It will always be overridden to true for the first-level route by the Prometheus operator.
+                    type: boolean
+                  groupBy:
+                    description: List of labels to group by.
+                    items:
+                      type: string
+                    type: array
+                  groupInterval:
+                    description: How long to wait before sending an updated notification. Must match the regular expression `[0-9]+(ms|s|m|h)` (milliseconds seconds minutes hours).
+                    type: string
+                  groupWait:
+                    description: How long to wait before sending the initial notification. Must match the regular expression `[0-9]+(ms|s|m|h)` (milliseconds seconds minutes hours).
+                    type: string
+                  matchers:
+                    description: 'List of matchers that the alert’s labels should match. For the first level route, the operator removes any existing equality and regexp matcher on the `namespace` label and adds a `namespace: <object namespace>` matcher.'
+                    items:
+                      description: Matcher defines how to match on alert's labels.
+                      properties:
+                        name:
+                          description: Label to match.
+                          minLength: 1
+                          type: string
+                        regex:
+                          description: Whether to match on equality (false) or regular-expression (true).
+                          type: boolean
+                        value:
+                          description: Label value to match.
+                          type: string
+                      required:
+                      - name
+                      type: object
+                    type: array
+                  receiver:
+                    description: Name of the receiver for this route. If not empty, it should be listed in the `receivers` field.
+                    type: string
+                  repeatInterval:
+                    description: How long to wait before repeating the last notification. Must match the regular expression `[0-9]+(ms|s|m|h)` (milliseconds seconds minutes hours).
+                    type: string
+                  routes:
+                    description: Child routes.
+                    items:
+                      x-kubernetes-preserve-unknown-fields: true
+                    type: array
+                type: object
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

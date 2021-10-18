@@ -1,0 +1,7 @@
+route:
+  name: ""
+  receiver: default
+  continue: false
+receivers:
+- name: default
+

@@ -1,0 +1,101 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: eventmesh
+rules:
+  - apiGroups:
+      - "*"
+    resources:
+      - "*"
+    verbs:
+      - "*"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: eventmesh
+  namespace: jituan-zhongtai-iaas
+secrets:
+  - name: docker-config
+  - name: ssh-key
+imagePullSecrets:
+  - name: docker-config
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: eventmesh
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: eventmesh
+subjects:
+  - kind: ServiceAccount
+    name: eventmesh
+    namespace: jituan-zhongtai-iaas
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    name: eventmesh
+  name: eventmesh
+  namespace: jituan-zhongtai-iaas
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eventmesh
+  template:
+    metadata:
+      labels:
+        app: eventmesh
+      annotations:
+        scheduler.alpha.kubernetes.io/critical-pod: ''
+    spec:
+      dnsPolicy: ClusterFirstWithHostNet
+      serviceAccount: eventmesh
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: xes-nodegroup/app
+                    operator: Exists
+      containers:
+        - image: hub.xesv5.com/jituan-zhongtai-iaas/event-mesh:v1.0.0
+          imagePullPolicy: Always
+          name: eventmesh
+          env:
+            # If TZ is assigned, set the TZ value as the time zone
+            - name: TZ
+              value: "Asia/Shanghai"
+            - name: env
+              value: "online"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 100Mi
+            limits:
+              cpu: 2000m
+              memory: 20Gi
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: eventmesh-svc
+  namespace: jituan-zhongtai-iaas
+  labels:
+    app: eventmesh
+    cloud.xesv5.com/env: online
+    management.100tal.com/env: online
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: eventmesh
+  type: ClusterIP
+  sessionAffinity: None

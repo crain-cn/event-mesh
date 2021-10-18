@@ -1,0 +1,79 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    app: prometheus-operator
+    app.kubernetes.io/managed-by: Helm
+    chart: prometheus-operator-9.3.2
+    heritage: Helm
+    release: prometheus-operator
+  name: prometheus-operator-pod.rules
+spec:
+  groups:
+    - name: pod-monitor
+      rules:
+        - alert: PodMemExceedRequest
+          annotations:
+            message: '{{ $labels.pod }} 内存占用超出Limit的60%'
+            runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodenotready
+          expr: |
+            sum(container_memory_rss{image!=""}) by(pod, namespace,node) / sum(container_spec_memory_limit_bytes{image!=""} != 0) by(pod, namespace,node)*100  > 60
+          for: 1m
+          labels:
+            severity: warning
+        - alert: PodCPUExceedRequest
+          annotations:
+            message: '{{ $labels.pod }} CPU占用超出Limit的60%'
+            runbook_url: https://github.com/kubernetes-monitoring/kubernetes-mixin/tree/master/runbook.md#alert-name-kubenodeunreachable
+          expr: |
+            sum(rate(container_cpu_usage_seconds_total{image!=""}[1m])) by (pod, namespace,node) / (sum(container_spec_cpu_quota{image!=""}/100000 != 0) by (pod, namespace,node)) * 100  > 60
+          for: 1m
+          labels:
+            severity: warning
+    - name: pod-status-monitor
+      rules:
+        - alert: pod-status-failed
+          expr: changes(kube_pod_status_phase{phase=~"Failed"}[5m]) >0
+          for: 1m
+          labels:
+            level: high
+            service: pod-failed
+          annotations:
+            summary: "集群:{{ $labels.monitor }}存在pod状态异常"
+            description: "pod:{{$labels.pod}},状态:{{$labels.phase}}"
+        - alert: pod-status-pending
+          expr: sum(kube_pod_status_phase{phase="Pending"})by(namespace,pod,phase)>0
+          for: 3m
+          labels:
+            level: high
+            service: pod-pending
+          annotations:
+            summary: "集群:{{ $labels.monitor }}存在pod状态pening异常超10分钟"
+            description: "pod:{{$labels.pod}},状态:{{$labels.phase}}"
+        - alert: pod-status-waiting
+          expr: sum(kube_pod_container_status_waiting_reason{reason!="ContainerCreating"})by(namespace,pod,reason)>0
+          for: 1m
+          labels:
+            level: high
+            service: pod-wait
+          annotations:
+            summary: "集群:{{ $labels.monitor }}存在pod状态Wait异常超5分钟"
+            description: "pod:{{$labels.pod}},状态:{{$labels.reason}}"
+        - alert: pod-status-terminated
+          expr: sum(kube_pod_container_status_terminated_reason)by(namespace,pod,reason)>0
+          for: 1m
+          labels:
+            level: high
+            service: pod-nocom
+          annotations:
+            summary: "集群:{{ $labels.monitor }}存在pod状态Terminated异常超5分钟"
+            description: "pod:{{$labels.pod}},状态:{{$labels.reason}}"
+        - alert: pod-status-restarts
+          expr: changes(kube_pod_container_status_restarts_total[20m])>3
+          for: 3m
+          labels:
+            level: high
+            service: pod-restart
+          annotations:
+            summary: "集群:{{ $labels.monitor }}存在pod半小时之内重启次数超过3次!"
+            description: "pod:{{$labels.pod}}"

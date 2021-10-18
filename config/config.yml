@@ -1,0 +1,19 @@
+databases:
+  - name: mysql
+    mysql:
+      host: 127.0.0.1
+      port: 6306
+      username: other_rw
+      database: k8s_notification
+      password: xxxxxxxxxxx
+    labels:
+      env: dev
+  - name: mysql_platform
+    mysql:
+      host: 127.0.0.1
+      port: 6306
+      username: other_rw
+      database: k8s_notification
+      password: xxxxxxxxxxxx
+    labels:
+      env: dev
