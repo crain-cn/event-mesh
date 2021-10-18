@@ -11,7 +11,7 @@ replace (
 )
 
 require (
-	github.com/crain-cn/event-mesh/pkg/k8s/apis v0.0.11
+	github.com/crain-cn/event-mesh/pkg/k8s/apis v0.0.1
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2
 )
